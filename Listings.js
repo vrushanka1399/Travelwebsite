@@ -80,7 +80,7 @@ export default function Listings(){
 
    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20}}>
     {listings.map(l=>(
-     <div key={l.id} style={{background:"#fff",padding:20}}>
+     <div key={l.id} className="card">
 
       <img src={l.image} width="100%" />
 
