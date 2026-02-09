@@ -6,49 +6,30 @@ export default function Auth() {
   const [password, setPassword] = useState("");
 
   const signup = async () => {
-    if (!email || !password) {
-      alert("Enter email and password");
-      return;
-    }
-
-    try {
-      await signupUser(email, password);
-      alert("Signup successful. Now login.");
-    } catch (err) {
-      alert(err.response?.data?.error?.message || "Signup failed");
-    }
+    await signupUser(email, password);
+    alert("User created. Now login.");
   };
 
   const login = async () => {
-    if (!email || !password) {
-      alert("Enter email and password");
-      return;
-    }
+    await loginUser(email, password);
 
-    try {
-      await loginUser(email, password);
+    // IMPORTANT — store ONLY email
+    localStorage.setItem("user", email);
 
-      // store logged in user
-      localStorage.setItem("user", JSON.stringify({ email }));
+    // remove old junk if exists
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("token");
 
-
-      // redirect to home
-      window.location.href = "/";
-    } catch (err) {
-      alert(err.response?.data?.error?.message || "Login failed");
-    }
+    window.location.href = "/";
   };
 
   return (
     <div style={{ marginTop: 150, textAlign: "center" }}>
-      <h2>User Auth</h2>
-
       <input
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <br />
       <br />
 
       <input
@@ -58,10 +39,8 @@ export default function Auth() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <br />
-      <br />
 
       <button onClick={signup}>Signup</button>
-      &nbsp;&nbsp;
       <button onClick={login}>Login</button>
     </div>
   );
