@@ -1,39 +1,85 @@
-import React,{useEffect,useState} from "react";
-import { getBookings } from "../services/firebase";
+﻿import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-export default function Bookings(){
+export default function Bookings() {
+  const [list, setList] = useState([]);
 
- const [data,setData]=useState([]);
+  useEffect(() => {
+    load();
+  }, []);
 
- useEffect(()=>{
-   load();
- },[]);
+  const load = async () => {
+    const res = await axios.get(
+      "https://firestore.googleapis.com/v1/projects/ecompract/databases/(default)/documents/bookings"
+    );
 
- const load = async()=>{
-   const res = await getBookings();
+    if (!res.data.documents) return;
 
-   const mapped = res.data.documents.map(doc=>({
-     id: doc.name.split("/").pop(),
-     ...Object.fromEntries(
-       Object.entries(doc.fields).map(([k,v])=>[k,Object.values(v)[0]])
-     )
-   }));
+    const arr = res.data.documents.map((d) => {
+      const f = d.fields;
 
-   setData(mapped);
- };
+      return {
+        id: d.name.split("/").pop(),
+        hotel: f.hotel.stringValue,
+        image: f.image.stringValue,
+        city: f.city.stringValue,
+        guests: f.guests.integerValue,
+        checkIn: f.checkIn.stringValue,
+        checkOut: f.checkOut.stringValue,
+        email: f.email.stringValue,
+        status: f.status?.stringValue || "Pending",
+      };
+    });
 
- return(
-  <div>
-   <h2>All Bookings</h2>
+    setList(arr);
+  };
 
-   {data.map(b=>(
-    <div key={b.id} style={{border:"1px solid"}}>
-      <p>Email: {b.email}</p>
-      <p>Total Guests: {b.guests}</p>
-      <p>Check In: {b.checkIn}</p>
-      <p>Check Out: {b.checkOut}</p>
+  const updateStatus = async (id, status) => {
+    await axios.patch(
+      `https://firestore.googleapis.com/v1/projects/ecompract/databases/(default)/documents/bookings/${id}?updateMask.fieldPaths=status`,
+      {
+        fields: {
+          status: { stringValue: status },
+        },
+      }
+    );
+
+    load();
+  };
+
+  return (
+    <div className="grid">
+      {list.map((b) => (
+        <div className="card" key={b.id}>
+          <img src={b.image} width="100%" />
+
+          <h3>{b.hotel}</h3>
+
+          <p>{b.email}</p>
+
+          <p>Guests: {b.guests}</p>
+
+          <p>
+            {b.checkIn} → {b.checkOut}
+          </p>
+
+          <b>Status: {b.status}</b>
+
+          <br />
+
+          {b.status === "Pending" && (
+            <>
+              <button onClick={() => updateStatus(b.id, "Confirmed")}>
+                Confirm
+              </button>
+
+              <button onClick={() => updateStatus(b.id, "Rejected")}>
+                Reject
+              </button>
+            </>
+          )}
+        </div>
+      ))}
     </div>
-   ))}
-  </div>
- );
+  );
 }
